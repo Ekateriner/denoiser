@@ -50,6 +50,20 @@ class InEnhancer_2ch(nn.Module):
                  floor=1e-3):
 
         super().__init__()
+        if resample not in [1, 2, 4]:
+            raise ValueError("Resample should be 1, 2 or 4.")
+
+        self.chin = chin
+        self.chout = chout
+        self.hidden = hidden
+        self.depth = depth
+        self.kernel_size = kernel_size
+        self.stride = stride
+        self.causal = causal
+        self.floor = floor
+        self.resample = resample
+        self.normalize = normalize
+
         self.denoiser = Demucs(2*chin, chout, hidden, depth, kernel_size, stride, causal,
                              resample, growth, max_hidden, normalize, glu, rescale, floor)
 
@@ -123,6 +137,20 @@ class InEnhancer_conv(nn.Module):
                  alternative=False):
 
         super().__init__()
+        if resample not in [1, 2, 4]:
+            raise ValueError("Resample should be 1, 2 or 4.")
+
+        self.chin = chin
+        self.chout = chout
+        self.hidden = hidden
+        self.depth = depth
+        self.kernel_size = kernel_size
+        self.stride = stride
+        self.causal = causal
+        self.floor = floor
+        self.resample = resample
+        self.normalize = normalize
+
         self.denoiser = Demucs(chin, chout, hidden, depth, kernel_size, stride, causal,
                                resample, growth, max_hidden, normalize, glu, rescale, floor)
 
@@ -223,6 +251,20 @@ class InEnhancer_lin(nn.Module): # = conv_alt?
                  floor=1e-3):
 
         super().__init__()
+        if resample not in [1, 2, 4]:
+            raise ValueError("Resample should be 1, 2 or 4.")
+
+        self.chin = chin
+        self.chout = chout
+        self.hidden = hidden
+        self.depth = depth
+        self.kernel_size = kernel_size
+        self.stride = stride
+        self.causal = causal
+        self.floor = floor
+        self.resample = resample
+        self.normalize = normalize
+
         self.denoiser = Demucs(chin, chout, hidden, depth, kernel_size, stride, causal,
                                resample, growth, max_hidden, normalize, glu, rescale, floor)
 
