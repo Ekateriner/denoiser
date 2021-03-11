@@ -26,7 +26,7 @@ def run(args):
     from denoiser.solver import Solver
     distrib.init(args)
 
-    if args.model == 'demusc':
+    if args.model == 'demucs':
         model = Demucs(**args.demucs)
     elif args.model == 'drop':
         model = Enhancer_drop(**args.demusc)
