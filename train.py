@@ -29,7 +29,7 @@ def run(args):
     if args.model == 'demucs':
         model = Demucs(**args.demucs)
     elif args.model == 'drop':
-        model = Enhancer_drop(**args.demusc)
+        model = Enhancer_drop(**args.demucs)
     elif args.model == '2chanel':
         model = InEnhancer_2ch(**args.demucs)
     elif args.model == 'linear':
