@@ -22,7 +22,7 @@ def run(args):
     from denoiser import distrib
     from denoiser.data import NoisyCleanSet
     from denoiser.demucs import Demucs
-    from denoiser.InModel import Enhancer_drop, Enhancer_plus, InEnhancer_lin, InEnhancer_conv
+    from denoiser.InModel import Enhancer_drop, InEnhancer_lin, InEnhancer_conv
     from denoiser.solver import Solver
     distrib.init(args)
 
@@ -36,8 +36,6 @@ def run(args):
         model = InEnhancer_conv(**args.demucs, alternative=False)
     elif args.model == 'conv_alter':
         model = InEnhancer_conv(**args.demucs, alternative=True)
-    elif args.model == 'plus':
-        model = Enhancer_plus(**args.demucs) #not exist yet
 
     if args.show:
         logger.info(model)

@@ -65,7 +65,7 @@ class InEnhancer_conv(nn.Module):
         self.resample = resample
         self.normalize = normalize
 
-        self.denoiser_sound = Demucs(chin, chout, hidden, depth, kernel_size, stride, causal,
+        self.denoiser_voice = Demucs(chin, chout, hidden, depth, kernel_size, stride, causal,
                                      resample, growth, max_hidden, normalize, glu, rescale, floor)
 
         self.denoiser_noise = Demucs(chin, chout, hidden, depth, kernel_size, stride, causal,
@@ -99,11 +99,17 @@ class InEnhancer_conv(nn.Module):
         return self.stride ** self.depth // self.resample
 
     def forward(self, mix):
-        mix_res = self.denoiser_sound(mix)
+        mix_res = self.denoiser_voice(mix)
         inv_res = self.denoiser_noise(-mix)
 
         result = th.cat([mix_res, inv_res], dim=1)
         return self.conv(result)
+
+    def load_state_dict_voice(self, state_dict):
+        self.denoiser_voice.load_state_dict(state_dict)
+
+    def load_state_dict_noise(self, state_dict):
+        self.denoiser_noise.load_state_dict(state_dict)
 
 
 class ChannelUnify(nn.Module):
@@ -126,7 +132,7 @@ class ChannelUnify(nn.Module):
     def forward(self, x):
         return (self.w @ x) + self.b
 
-class InEnhancer_lin(nn.Module): # = conv_alt?
+class InEnhancer_lin(nn.Module):
     """
         Demucs speech enhancement model.
         Args:
@@ -182,7 +188,7 @@ class InEnhancer_lin(nn.Module): # = conv_alt?
         self.resample = resample
         self.normalize = normalize
 
-        self.denoiser_sound = Demucs(chin, chout, hidden, depth, kernel_size, stride, causal,
+        self.denoiser_voice = Demucs(chin, chout, hidden, depth, kernel_size, stride, causal,
                                      resample, growth, max_hidden, normalize, glu, rescale, floor)
 
         self.denoiser_noise = Demucs(chin, chout, hidden, depth, kernel_size, stride, causal,
@@ -213,35 +219,42 @@ class InEnhancer_lin(nn.Module): # = conv_alt?
         return self.stride ** self.depth // self.resample
 
     def forward(self, mix):
-        mix_res = self.denoiser_sound(mix)
+        mix_res = self.denoiser_voice(mix)
         inv_res = self.denoiser_noise(-mix)
 
         result = th.cat([mix_res, inv_res], dim=1)
         return self.linear(result)
 
-class Enhancer_drop(nn.Module):
-    """
-    Demucs speech enhancement model.
-    Args:
-        - chin (int): number of input channels.
-        - chout (int): number of output channels.
-        - hidden (int): number of initial hidden channels.
-        - depth (int): number of layers.
-        - kernel_size (int): kernel size for each layer.
-        - stride (int): stride for each layer.
-        - causal (bool): if false, uses BiLSTM instead of LSTM.
-        - resample (int): amount of resampling to apply to the input/output.
-            Can be one of 1, 2 or 4.
-        - growth (float): number of channels is multiplied by this for every layer.
-        - max_hidden (int): maximum number of channels. Can be useful to
-            control the size/speed of the model.
-        - normalize (bool): if true, normalize the input.
-        - glu (bool): if true uses GLU instead of ReLU in 1x1 convolutions.
-        - rescale (float): controls custom weight initialization.
-            See https://arxiv.org/abs/1911.13254.
-        - floor (float): stability flooring when normalizing.
+    def load_state_dict_voice(self, state_dict):
+        self.denoiser_voice.load_state_dict(state_dict)
 
+    def load_state_dict_noise(self, state_dict):
+        self.denoiser_noise.load_state_dict(state_dict)
+
+class InEnhancer_sum(nn.Module):
     """
+        Demucs speech enhancement model.
+        Args:
+            - chin (int): number of input channels.
+            - chout (int): number of output channels.
+            - hidden (int): number of initial hidden channels.
+            - depth (int): number of layers.
+            - kernel_size (int): kernel size for each layer.
+            - stride (int): stride for each layer.
+            - causal (bool): if false, uses BiLSTM instead of LSTM.
+            - resample (int): amount of resampling to apply to the input/output.
+                Can be one of 1, 2 or 4.
+            - growth (float): number of channels is multiplied by this for every layer.
+            - max_hidden (int): maximum number of channels. Can be useful to
+                control the size/speed of the model.
+            - normalize (bool): if true, normalize the input.
+            - glu (bool): if true uses GLU instead of ReLU in 1x1 convolutions.
+            - rescale (float): controls custom weight initialization.
+                See https://arxiv.org/abs/1911.13254.
+            - floor (float): stability flooring when normalizing.
+
+        """
+
     @capture_init
     def __init__(self,
                  chin=1,
@@ -257,8 +270,7 @@ class Enhancer_drop(nn.Module):
                  normalize=True,
                  glu=True,
                  rescale=0.1,
-                 floor=1e-3,
-                 dropout=0.5):
+                 floor=1e-3):
 
         super().__init__()
         if resample not in [1, 2, 4]:
@@ -275,36 +287,13 @@ class Enhancer_drop(nn.Module):
         self.resample = resample
         self.normalize = normalize
 
-        self.encoder = nn.ModuleList()
-        self.decoder = nn.ModuleList()
-        activation = nn.GLU(1) if glu else nn.ReLU()
-        ch_scale = 2 if glu else 1
+        self.denoiser_voice = Demucs(chin, chout, hidden, depth, kernel_size, stride, causal,
+                                     resample, growth, max_hidden, normalize, glu, rescale, floor)
 
-        for index in range(depth):
-            encode = []
-            encode += [
-                nn.Conv1d(chin, hidden, kernel_size, stride),
-                nn.ReLU(),
-                nn.Conv1d(hidden, hidden * ch_scale, 1), activation,
-                nn.Dropout(dropout)
-            ]
-            self.encoder.append(nn.Sequential(*encode))
+        self.denoiser_noise = Demucs(chin, chout, hidden, depth, kernel_size, stride, causal,
+                                     resample, growth, max_hidden, normalize, glu, rescale, floor)
 
-            decode = []
-            decode += [
-                nn.Conv1d(hidden, ch_scale * hidden, 1), activation,
-                nn.ConvTranspose1d(hidden, chout, kernel_size, stride),
-            ]
-            if index > 0:
-                decode.append(nn.ReLU())
-            self.decoder.insert(0, nn.Sequential(*decode))
-            chout = hidden
-            chin = hidden
-            hidden = min(int(growth * hidden), max_hidden)
-
-        self.lstm = BLSTM(chin, bi=not causal)
-        if rescale:
-            rescale_module(self, reference=rescale)
+        self.linear = ChannelUnify(2, 1)
 
     def valid_length(self, length):
         """
@@ -329,44 +318,20 @@ class Enhancer_drop(nn.Module):
         return self.stride ** self.depth // self.resample
 
     def forward(self, mix):
-        if mix.dim() == 2:
-            mix = mix.unsqueeze(1)
+        mix_res = self.denoiser_voice(mix)
+        inv_res = self.denoiser_noise(-mix)
 
-        if self.normalize:
-            mono = mix.mean(dim=1, keepdim=True)
-            std = mono.std(dim=-1, keepdim=True)
-            mix = mix / (self.floor + std)
-        else:
-            std = 1
-        length = mix.shape[-1]
-        x = mix
-        x = F.pad(x, (0, self.valid_length(length) - length))
-        if self.resample == 2:
-            x = upsample2(x)
-        elif self.resample == 4:
-            x = upsample2(x)
-            x = upsample2(x)
-        skips = []
-        for encode in self.encoder:
-            x = encode(x)
-            skips.append(x)
-        x = x.permute(2, 0, 1)
-        x, _ = self.lstm(x)
-        x = x.permute(1, 2, 0)
-        for decode in self.decoder:
-            skip = skips.pop(-1)
-            x = x + skip[..., :x.shape[-1]]
-            x = decode(x)
-        if self.resample == 2:
-            x = downsample2(x)
-        elif self.resample == 4:
-            x = downsample2(x)
-            x = downsample2(x)
+        result = mix_res - inv_res
+        return result
 
-        x = x[..., :length]
-        return std * x
+    def load_state_dict_voice(self, state_dict):
+        self.denoiser_voice.load_state_dict(state_dict)
 
-class Enhancer_plus(nn.Module): #Unet+
+    def load_state_dict_noise(self, state_dict):
+        self.denoiser_noise.load_state_dict(state_dict)
+
+
+class Enhancer_drop(nn.Module):
     """
     Demucs speech enhancement model.
     Args:

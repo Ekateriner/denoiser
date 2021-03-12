@@ -118,7 +118,12 @@ class Solver(object):
         if continue_pretrained:
             logger.info("Fine tuning from pre-trained model %s", continue_pretrained)
             model = getattr(pretrained, self.args.continue_pretrained)()
-            self.model.load_state_dict(model.state_dict())
+            if self.args.pretrained_noise:
+                self.model.load_state_dict_clean(model.state_dict())
+                state_dict = torch.load(self.args.pretrained_noise)
+                self.model.load_state_dict_noise(state_dict)
+            else:
+                self.model.load_state_dict(model.state_dict())
 
     def train(self):
         # Optimizing the model

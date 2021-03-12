@@ -30,6 +30,7 @@ continue_from: '' # Path the a checkpoint.th file to start from.
                   # so use a dummy=something not to mixup experiments.
 continue_best: false  # continue from best, not last state if continue_from is set.
 continue_pretrained:   # use either dns48, dns64 or master64 to fine tune from pretrained-model
+pretrained_noise:      # path to noise recogn model state_dict
 restart: false # Ignore existing checkpoints
 checkpoint_file: checkpoint.th
 best_file: best.th  # will contain only best model at any point
@@ -60,6 +61,20 @@ batch_size: 64
 # Models
 model: demucs # either demucs or dwave
 demucs:
+  chin: 1
+  chout: 1
+  hidden: 48
+  max_hidden: 10000
+  causal: true
+  glu: true
+  depth: 5
+  kernel_size: 8
+  stride: 4
+  normalize: true
+  resample: 4
+  growth: 2
+  rescale: 0.1
+noise:
   chin: 1
   chout: 1
   hidden: 48
