@@ -100,7 +100,7 @@ class InEnhancer_conv(nn.Module):
 
     def forward(self, mix):
         mix_res = self.denoiser_voice(mix)
-        inv_res = self.denoiser_noise(-mix)
+        inv_res = self.denoiser_noise(mix)
 
         result = th.cat([mix_res, inv_res], dim=1)
         return self.conv(result)
@@ -220,7 +220,7 @@ class InEnhancer_lin(nn.Module):
 
     def forward(self, mix):
         mix_res = self.denoiser_voice(mix)
-        inv_res = self.denoiser_noise(-mix)
+        inv_res = self.denoiser_noise(mix)
 
         result = th.cat([mix_res, inv_res], dim=1)
         return self.linear(result)
@@ -319,7 +319,7 @@ class InEnhancer_sum(nn.Module):
 
     def forward(self, mix):
         mix_res = self.denoiser_voice(mix)
-        inv_res = self.denoiser_noise(-mix)
+        inv_res = self.denoiser_noise(mix)
 
         result = mix_res - inv_res
         return result
