@@ -22,7 +22,7 @@ def run(args):
     from denoiser import distrib
     from denoiser.data import NoisyCleanSet
     from denoiser.demucs import Demucs
-    from denoiser.InModel import Enhancer_drop, Enhancer_plus, InEnhancer_2ch, InEnhancer_lin, InEnhancer_conv
+    from denoiser.InModel import Enhancer_drop, Enhancer_plus, InEnhancer_lin, InEnhancer_conv
     from denoiser.solver import Solver
     distrib.init(args)
 
@@ -30,8 +30,6 @@ def run(args):
         model = Demucs(**args.demucs)
     elif args.model == 'drop':
         model = Enhancer_drop(**args.demucs)
-    elif args.model == '2chanel':
-        model = InEnhancer_2ch(**args.demucs)
     elif args.model == 'linear':
         model = InEnhancer_lin(**args.demucs)
     elif args.model == 'conv':
