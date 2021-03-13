@@ -122,7 +122,7 @@ class Solver(object):
                 self.model.load_state_dict_clean(model.state_dict())
                 state_dict = torch.load(self.args.pretrained_noise)
                 self.model.load_state_dict_noise(state_dict)
-            else:
+ls            else:
                 self.model.load_state_dict(model.state_dict())
 
     def train(self):
