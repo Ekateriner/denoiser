@@ -6,14 +6,14 @@
 # LICENSE file in the root directory of this source tree.
 # authors: adiyoss and adefossez
 
-path=egs/valentiny/tr
+path=egs/valentini/tr
 if test ! -e $path ; then
     mkdir -p $path
 fi
 python3 -m denoiser.audio $1/noisy_trainset_28spk_wav > $path/noisy.json
 python3 -m denoiser.audio $1/clean_trainset_28spk_wav > $path/clean.json
 
-path=egs/valentiny/tt
+path=egs/valentini/tt
 if test ! -e $path ; then
     mkdir -p $path
 fi
