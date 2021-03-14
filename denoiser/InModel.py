@@ -132,6 +132,7 @@ class ChannelUnify(nn.Module):
     def forward(self, x):
         return (self.w @ x) + self.b
 
+
 class InEnhancer_lin(nn.Module):
     """
         Demucs speech enhancement model.
@@ -230,6 +231,7 @@ class InEnhancer_lin(nn.Module):
 
     def load_state_dict_noise(self, state_dict):
         self.denoiser_noise.load_state_dict(state_dict)
+
 
 class InEnhancer_sum(nn.Module):
     """
@@ -354,6 +356,7 @@ class Enhancer_drop(nn.Module):
         - floor (float): stability flooring when normalizing.
 
     """
+
     @capture_init
     def __init__(self,
                  chin=1,
@@ -478,6 +481,7 @@ class Enhancer_drop(nn.Module):
         x = x[..., :length]
         return std * x
 
+
 class Demucs_inv(nn.Module):
     """
         Demucs speech enhancement model.
@@ -536,6 +540,7 @@ class Demucs_inv(nn.Module):
 
         self.demucs = Demucs(chin, chout, hidden, depth, kernel_size, stride, causal,
                              resample, growth, max_hidden, normalize, glu, rescale, floor)
+
     def valid_length(self, length):
         """
         Return the nearest valid length to use with the model so that

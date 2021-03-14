@@ -22,7 +22,7 @@ def run(args):
     from denoiser import distrib
     from denoiser.data import NoisyCleanSet
     from denoiser.demucs import Demucs
-    from denoiser.InModel import Enhancer_drop, InEnhancer_lin, InEnhancer_conv, Demucs_inv
+    from denoiser.InModel import Enhancer_drop, InEnhancer_lin, InEnhancer_conv, Demucs_inv, InEnhancer_sum
     from denoiser.solver import Solver
     distrib.init(args)
 
@@ -38,6 +38,8 @@ def run(args):
         model = InEnhancer_conv(**args.demucs, alternative=False)
     elif args.model == 'conv_alter':
         model = InEnhancer_conv(**args.demucs, alternative=True)
+    elif args.model == 'sum':
+        model = InEnhancer_sum(**args.demucs)
 
     if args.show:
         logger.info(model)
@@ -76,7 +78,7 @@ def run(args):
 
     # torch also initialize cuda seed if available
     torch.manual_seed(args.seed)
-    if torch.cuda.is_available():
+    if torch.cuda.is_available() and args.device == 'cuda':
         model.cuda()
 
     # optimizer
@@ -90,7 +92,9 @@ def run(args):
     solver = Solver(data, model, optimizer, args)
     try:
         solver.train()
-    except:
+    except BaseException as error:
+        print('An exception occurred: {}'.format(error))
+        del model
         torch.cuda.empty_cache()
         os._exit(1)
 
