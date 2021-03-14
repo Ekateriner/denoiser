@@ -477,3 +477,86 @@ class Enhancer_drop(nn.Module):
 
         x = x[..., :length]
         return std * x
+
+class Demucs_inv(nn.Module):
+    """
+        Demucs speech enhancement model.
+        Args:
+            - chin (int): number of input channels.
+            - chout (int): number of output channels.
+            - hidden (int): number of initial hidden channels.
+            - depth (int): number of layers.
+            - kernel_size (int): kernel size for each layer.
+            - stride (int): stride for each layer.
+            - causal (bool): if false, uses BiLSTM instead of LSTM.
+            - resample (int): amount of resampling to apply to the input/output.
+                Can be one of 1, 2 or 4.
+            - growth (float): number of channels is multiplied by this for every layer.
+            - max_hidden (int): maximum number of channels. Can be useful to
+                control the size/speed of the model.
+            - normalize (bool): if true, normalize the input.
+            - glu (bool): if true uses GLU instead of ReLU in 1x1 convolutions.
+            - rescale (float): controls custom weight initialization.
+                See https://arxiv.org/abs/1911.13254.
+            - floor (float): stability flooring when normalizing.
+
+        """
+
+    @capture_init
+    def __init__(self,
+                 chin=1,
+                 chout=1,
+                 hidden=48,
+                 depth=5,
+                 kernel_size=8,
+                 stride=4,
+                 causal=True,
+                 resample=4,
+                 growth=2,
+                 max_hidden=10_000,
+                 normalize=True,
+                 glu=True,
+                 rescale=0.1,
+                 floor=1e-3):
+
+        super().__init__()
+        if resample not in [1, 2, 4]:
+            raise ValueError("Resample should be 1, 2 or 4.")
+
+        self.chin = chin
+        self.chout = chout
+        self.hidden = hidden
+        self.depth = depth
+        self.kernel_size = kernel_size
+        self.stride = stride
+        self.causal = causal
+        self.floor = floor
+        self.resample = resample
+        self.normalize = normalize
+
+        self.demucs = Demucs(chin, chout, hidden, depth, kernel_size, stride, causal,
+                             resample, growth, max_hidden, normalize, glu, rescale, floor)
+    def valid_length(self, length):
+        """
+        Return the nearest valid length to use with the model so that
+        there is no time steps left over in a convolutions, e.g. for all
+        layers, size of the input - kernel_size % stride = 0.
+
+        If the mixture has a valid length, the estimated sources
+        will have exactly the same length.
+        """
+        length = math.ceil(length * self.resample)
+        for idx in range(self.depth):
+            length = math.ceil((length - self.kernel_size) / self.stride) + 1
+            length = max(length, 1)
+        for idx in range(self.depth):
+            length = (length - 1) * self.stride + self.kernel_size
+        length = int(math.ceil(length / self.resample))
+        return int(length)
+
+    @property
+    def total_stride(self):
+        return self.stride ** self.depth // self.resample
+
+    def forward(self, mix):
+        return self.demucs(-mix)

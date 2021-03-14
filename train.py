@@ -22,12 +22,14 @@ def run(args):
     from denoiser import distrib
     from denoiser.data import NoisyCleanSet
     from denoiser.demucs import Demucs
-    from denoiser.InModel import Enhancer_drop, InEnhancer_lin, InEnhancer_conv
+    from denoiser.InModel import Enhancer_drop, InEnhancer_lin, InEnhancer_conv, Demucs_inv
     from denoiser.solver import Solver
     distrib.init(args)
 
     if args.model == 'demucs':
         model = Demucs(**args.demucs)
+    elif args.model == 'demucs_inv':
+        model = Demucs_inv(**args.demucs)
     elif args.model == 'drop':
         model = Enhancer_drop(**args.demucs)
     elif args.model == 'linear':
@@ -86,7 +88,11 @@ def run(args):
 
     # Construct Solver
     solver = Solver(data, model, optimizer, args)
-    solver.train()
+    try:
+        solver.train()
+    except:
+        torch.cuda.empty_cache()
+        os._exit(1)
 
 
 def _main(args):
