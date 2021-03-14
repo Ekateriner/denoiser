@@ -90,13 +90,14 @@ def run(args):
 
     # Construct Solver
     solver = Solver(data, model, optimizer, args)
-    try:
+    solver.train()
+    '''try:
         solver.train()
     except BaseException as error:
         print('An exception occurred: {}'.format(error))
         del model
         torch.cuda.empty_cache()
-        os._exit(1)
+        os._exit(1)'''
 
 
 def _main(args):
