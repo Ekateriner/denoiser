@@ -56,7 +56,7 @@ stft_loss: False
 stft_sc_factor: .5
 stft_mag_factor: .5
 epochs: 400
-batch_size: 64
+batch_size: 32
 
 # Models
 model: demucs # either demucs or dwave
