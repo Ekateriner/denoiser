@@ -790,7 +790,7 @@ class U_net_plus(nn.Module):
             current_skips = []
             for j in range(current):
                 current_skips.append(skips.pop(-1))
-            total_skip = th.zeros(x.size)
+            total_skip = th.zeros(x.shape)
             for skip in current_skips:
                 total_skip += skip[..., :x.shape[-1]]
                 skips.append(self.decoder[index](skip))
