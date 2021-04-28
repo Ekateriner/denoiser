@@ -790,7 +790,7 @@ class U_net_plus(nn.Module):
             current_skips = []
             for j in range(current):
                 current_skips.append(skips.pop(-1))
-            total_skip = th.zeros(x.shape)
+            total_skip = th.zeros(x.shape, device=x.device)
             for skip in current_skips:
                 total_skip += skip[..., :x.shape[-1]]
                 skips.append(self.decoder[index](skip))
@@ -800,7 +800,7 @@ class U_net_plus(nn.Module):
             index += 1
 
         #last (top) layer
-        total_skip = th.zeros(x.shape)
+        total_skip = th.zeros(x.shape, device=x.device)
         for skip in skips:
             total_skip += skip[..., :x.shape[-1]]
         x = x + total_skip
