@@ -800,7 +800,7 @@ class U_net_plus(nn.Module):
             index += 1
 
         #last (top) layer
-        total_skip = th.zeros(x.size)
+        total_skip = th.zeros(x.shape)
         for skip in skips:
             total_skip += skip[..., :x.shape[-1]]
         x = x + total_skip
