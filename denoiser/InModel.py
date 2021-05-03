@@ -153,7 +153,7 @@ class InEnhancer_rep(nn.Module):
         self.normalize = normalize
         self.rep_depth = rep_depth
 
-        self.denoisers = []
+        self.denoisers = nn.ModuleList()
         for i in range(self.rep_depth):
             self.denoisers.append(Demucs(chin, chout, hidden, depth, kernel_size, stride, causal,
                                      resample, growth, max_hidden, normalize, glu, rescale, floor))
