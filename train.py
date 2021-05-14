@@ -22,7 +22,8 @@ def run(args):
     from denoiser import distrib
     from denoiser.data import NoisyCleanSet
     from denoiser.demucs import Demucs
-    from denoiser.InModel import InEnhancer_lin, InEnhancer_conv, Demucs_inv, InEnhancer_rep, InEnhancer_selfrep, InEnhancer_2ch, U_net, U_net_plus
+    from denoiser.InModel import InEnhancer_lin, InEnhancer_conv, Demucs_inv, InEnhancer_rep, InEnhancer_selfrep, \
+        InEnhancer_2ch, U_net, U_net_plus, LU_net_plus
     from denoiser.solver import Solver
     distrib.init(args)
 
@@ -46,6 +47,8 @@ def run(args):
         model = U_net(**args.demucs)
     elif args.model == 'Unet_plus':
         model = U_net_plus(**args.demucs)
+    elif args.model == 'LUnet_plus':
+        model = LU_net_plus(**args.demucs)
 
     if args.show:
         logger.info(model)
