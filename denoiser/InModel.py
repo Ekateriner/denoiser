@@ -185,7 +185,7 @@ class InEnhancer_rep(nn.Module):
         result = mix
         for i in range(self.rep_depth):
             result = self.denoisers[i](input)
-            input = th.clone(input)
+            input = th.clone(result)
         return result
 
 class InEnhancer_selfrep(nn.Module):
@@ -248,6 +248,7 @@ class InEnhancer_selfrep(nn.Module):
 
         self.denoiser = Demucs(chin, chout, hidden, depth, kernel_size, stride, causal,
                                resample, growth, max_hidden, normalize, glu, rescale, floor)
+        self.relu = nn.ReLU()
         
     def valid_length(self, length):
         """
@@ -275,8 +276,8 @@ class InEnhancer_selfrep(nn.Module):
         input = mix
         result = mix
         for _ in range(self.rep_depth):
-            result = self.denoiser(input)
-            input = th.clone(input)
+            result = self.relu(self.denoiser(input))
+            input = th.clone(result)
         return result
 
 
