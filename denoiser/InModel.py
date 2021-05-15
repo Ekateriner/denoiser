@@ -181,11 +181,11 @@ class InEnhancer_rep(nn.Module):
         return self.stride ** self.depth // self.resample
 
     def forward(self, mix):
-        input = mix
+        #input = mix
         result = mix
         for i in range(self.rep_depth):
-            result = self.denoisers[i](input)
-            input = th.clone(result)
+            result = self.denoisers[i](result)
+            #input = th.clone(result)
         return result
 
 class InEnhancer_selfrep(nn.Module):
