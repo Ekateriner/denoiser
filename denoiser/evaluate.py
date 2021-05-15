@@ -29,6 +29,7 @@ add_flags(parser)
 parser.add_argument('--data_dir', help='directory including noisy.json and clean.json files')
 parser.add_argument('--matching', default="sort", help='set this to dns for the dns dataset.')
 parser.add_argument('--save_path', default="./result", help='path to save results')
+parser.add_argument('--model_path', default=None, help='path to checkpoint with model')
 parser.add_argument('--no_pesq', action="store_false", dest="pesq", default=True,
                     help="Don't compute PESQ.")
 parser.add_argument('-v', '--verbose', action='store_const', const=logging.DEBUG,
