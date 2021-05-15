@@ -28,6 +28,7 @@ parser = argparse.ArgumentParser(
 add_flags(parser)
 parser.add_argument('--data_dir', help='directory including noisy.json and clean.json files')
 parser.add_argument('--matching', default="sort", help='set this to dns for the dns dataset.')
+parser.add_argument('--save_path', default="./result", help='path to save results')
 parser.add_argument('--no_pesq', action="store_false", dest="pesq", default=True,
                     help="Don't compute PESQ.")
 parser.add_argument('-v', '--verbose', action='store_const', const=logging.DEBUG,
@@ -39,6 +40,9 @@ def evaluate(args, model=None, data_loader=None):
     total_stoi = 0
     total_cnt = 0
     updates = 5
+
+    pesq_array = []
+    stoi_array = []
 
     # Load model
     if not model:
@@ -70,8 +74,21 @@ def evaluate(args, model=None, data_loader=None):
 
         for pending in LogProgress(logger, pendings, updates, name="Eval metrics"):
             pesq_i, stoi_i = pending.result()
+
+            pesq_array.append(pesq_i)
+            stoi_array.append(stoi_i)
+
             total_pesq += pesq_i
             total_stoi += stoi_i
+
+    pesq_array = torch.tensor(pesq_array)
+    stoi_array = torch.tensor(stoi_array)
+
+    assert pesq_array.sum().values() == total_pesq
+    assert stoi_array.sum().values() == total_stoi
+
+    torch.save(pesq_array, args.save_path + "_pesq")
+    torch.save(stoi_array, args.save_path + "_stoi")
 
     metrics = [total_pesq, total_stoi]
     pesq, stoi = distrib.average([m/total_cnt for m in metrics], total_cnt)
