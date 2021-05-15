@@ -18,7 +18,7 @@ import torch
 from .data import NoisyCleanSet
 from .enhance import add_flags, get_estimate
 from . import distrib, pretrained
-from .utils import bold, LogProgress
+from .utils import bold, LogProgress, deserialize_model
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +43,11 @@ def evaluate(args, model=None, data_loader=None):
 
     pesq_array = []
     stoi_array = []
+
+    if args.model_path:
+        load_from = args.model_path
+        package = torch.load(load_from, 'cpu')
+        model = deserialize_model(package)
 
     # Load model
     if not model:
