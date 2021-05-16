@@ -46,6 +46,8 @@ pesq: True # compute pesq?
 eval_every: 10  # compute test metrics every so epochs
 dry: 0.  # dry/wet knob value at eval
 streaming: False  # use streaming evaluation for Demucs
+need_save: False
+save_path: ../result/model
 
 # Optimization related
 optim: adam

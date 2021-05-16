@@ -29,7 +29,7 @@ add_flags(parser)
 parser.add_argument('--data_dir', help='directory including noisy.json and clean.json files')
 parser.add_argument('--matching', default="sort", help='set this to dns for the dns dataset.')
 parser.add_argument('--save_path', default="./result", help='path to save results')
-parser.add_argument('--save', default=False, help='save results or not')
+parser.add_argument('--need_save', default=False, help='save results or not')
 parser.add_argument('--no_pesq', action="store_false", dest="pesq", default=True,
                     help="Don't compute PESQ.")
 parser.add_argument('-v', '--verbose', action='store_const', const=logging.DEBUG,
@@ -76,14 +76,14 @@ def evaluate(args, model=None, data_loader=None):
         for pending in LogProgress(logger, pendings, updates, name="Eval metrics"):
             pesq_i, stoi_i = pending.result()
 
-            if args.save:
+            if args.need_save:
                 pesq_array.append(pesq_i)
                 stoi_array.append(stoi_i)
 
             total_pesq += pesq_i
             total_stoi += stoi_i
 
-    if args.save:
+    if args.need_save:
         pesq_array = torch.tensor(pesq_array)
         stoi_array = torch.tensor(stoi_array)
 
