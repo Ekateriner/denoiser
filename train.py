@@ -22,7 +22,7 @@ def run(args):
     from denoiser import distrib
     from denoiser.data import NoisyCleanSet
     from denoiser.demucs import Demucs
-    from denoiser.InModel import InEnhancer_lin, InEnhancer_conv, Demucs_inv, InEnhancer_rep, InEnhancer_selfrep, \
+    from denoiser.InModel import Demucs_inv, InEnhancer_rep, InEnhancer_selfrep, \
         InEnhancer_2ch, U_net, U_net_plus, LU_net_plus
     from denoiser.solver import Solver
     distrib.init(args)
@@ -31,12 +31,12 @@ def run(args):
         model = Demucs(**args.demucs)
     elif args.model == 'demucs_inv':
         model = Demucs_inv(**args.demucs)
-    elif args.model == 'linear':
-        model = InEnhancer_lin(**args.demucs)
-    elif args.model == 'conv':
-        model = InEnhancer_conv(**args.demucs, alternative=False)
-    elif args.model == 'conv_alter':
-        model = InEnhancer_conv(**args.demucs, alternative=True)
+    #elif args.model == 'linear':
+    #    model = InEnhancer_lin(**args.demucs)
+    #elif args.model == 'conv':
+    #    model = InEnhancer_conv(**args.demucs, alternative=False)
+    #elif args.model == 'conv_alter':
+    #    model = InEnhancer_conv(**args.demucs, alternative=True)
     elif args.model == 'demucs_rep':
         model = InEnhancer_rep(**args.demucs, rep_depth=2)
     elif args.model == 'demucs_selfrep':
