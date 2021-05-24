@@ -24,8 +24,8 @@ def find_audio_files(path, exts=[".wav"], progress=True):
                 audio_files.append(str(file.resolve()))
     meta = []
     for idx, file in enumerate(audio_files):
-        siginfo, _ = torchaudio.info(file)
-        length = siginfo.length // siginfo.channels
+        siginfo = torchaudio.info(file)
+        length = siginfo.num_frames
         meta.append((file, length))
         if progress:
             print(format((1 + idx) / len(audio_files), " 3.1%"), end='\r', file=sys.stderr)
@@ -69,7 +69,7 @@ class Audioset:
             if self.length is not None:
                 offset = self.stride * index
                 num_frames = self.length
-            out, sr = torchaudio.load(str(file), offset=offset, num_frames=num_frames)
+            out, sr = torchaudio.load(str(file), frame_offset=offset, num_frames=num_frames)
             if self.sample_rate is not None:
                 if sr != self.sample_rate:
                     raise RuntimeError(f"Expected {file} to have sample rate of "

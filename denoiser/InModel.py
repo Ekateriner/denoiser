@@ -970,8 +970,9 @@ class STFT_Enhancer(nn.Module):
         self.resample = resample
         self.normalize = normalize
 
-        self.stft = T.Spectrogram(n_fft=1024, win_length=600, hop_length=120)
-        self.grif = T.GriffinLim(n_fft=1024, win_length=600, hop_length=120)
+        self.spec = T.Spectrogram(n_fft=1020, win_length=240, hop_length=120)
+        self.grif = T.GriffinLim(n_fft=1020, win_length=240, hop_length=120)
+        self.relu = nn.ReLU()
 
         self.encoder = nn.ModuleList()
         self.decoder = nn.ModuleList()
@@ -981,7 +982,7 @@ class STFT_Enhancer(nn.Module):
         for index in range(depth):
             encode = []
             encode += [
-                nn.Conv2d(chin, hidden, (2, kernel_size), stride),
+                nn.Conv2d(chin, hidden, (3, kernel_size), (2, stride)),
                 nn.ReLU(),
                 nn.Conv2d(hidden, hidden * ch_scale, 1), activation,
             ]
@@ -990,8 +991,7 @@ class STFT_Enhancer(nn.Module):
             decode = []
             decode += [
                 nn.Conv2d(hidden, ch_scale * hidden, 1), activation,
-                nn.ConvTranspose2d(hidden, chout, (2, kernel_size), stride,
-                                   output_padding = (1, 0)),
+                nn.ConvTranspose2d(hidden, chout, (3, kernel_size), (2, stride)),
             ]
             if index > 0:
                 decode.append(nn.ReLU())
@@ -1036,9 +1036,10 @@ class STFT_Enhancer(nn.Module):
             mix = mix / (self.floor + std)
         else:
             std = 1
-        length = mix.shape[-1]
         #x = mix
-        x = self.stft(mix)
+        self.grif.length = mix.shape[-1]
+        x = self.spec(mix)
+        length = x.shape[-1]
         x = F.pad(x, (0, self.valid_length(length) - length))
         if self.resample == 2:
             x = upsample2(x)
@@ -1047,20 +1048,16 @@ class STFT_Enhancer(nn.Module):
             x = upsample2(x)
         skips = []
         for encode in self.encoder:
-            #print(x.shape)
             x = encode(x)
             skips.append(x)
-        #print(x.shape)
         last = x.shape
         x = x.view(x.shape[0], x.shape[1], -1)
         x = x.permute(2, 0, 1)
         x, _ = self.lstm(x)
         x = x.permute(1, 2, 0)
         x = x.view(last)
-
         for decode in self.decoder:
             skip = skips.pop(-1)
-            #print(x.shape, ' ', skip.shape)
             x = x + skip[..., :x.shape[-2], :x.shape[-1]]
             x = decode(x)
         if self.resample == 2:
@@ -1068,7 +1065,9 @@ class STFT_Enhancer(nn.Module):
         elif self.resample == 4:
             x = downsample2(x)
             x = downsample2(x)
-
+        x = 1e0 + self.relu(x) #x.abs()
         x = x[..., :length]
+        #plot_spectrogram(x[0][0].cpu().detach(), title='torchaudio')
         x = self.grif(x)
+        #assert th.isnan(x).sum() == 0
         return std * x
