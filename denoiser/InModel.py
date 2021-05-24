@@ -944,8 +944,8 @@ class STFT_Enhancer(nn.Module):
                  chout=1,
                  hidden=48,
                  depth=5,
-                 kernel_size=8,
-                 stride=4,
+                 kernel_size=6,
+                 stride=3,
                  causal=True,
                  resample=4,
                  growth=2,
@@ -981,7 +981,7 @@ class STFT_Enhancer(nn.Module):
         for index in range(depth):
             encode = []
             encode += [
-                nn.Conv2d(chin, hidden, kernel_size, stride),
+                nn.Conv2d(chin, hidden, (2, kernel_size), stride),
                 nn.ReLU(),
                 nn.Conv2d(hidden, hidden * ch_scale, 1), activation,
             ]
@@ -990,7 +990,8 @@ class STFT_Enhancer(nn.Module):
             decode = []
             decode += [
                 nn.Conv2d(hidden, ch_scale * hidden, 1), activation,
-                nn.ConvTranspose2d(hidden, chout, kernel_size, stride),
+                nn.ConvTranspose2d(hidden, chout, (2, kernel_size), stride,
+                                   output_padding = (1, 0)),
             ]
             if index > 0:
                 decode.append(nn.ReLU())
@@ -999,6 +1000,7 @@ class STFT_Enhancer(nn.Module):
             chin = hidden
             hidden = min(int(growth * hidden), max_hidden)
 
+        self.lstm = BLSTM(chin, bi=not causal)
         if rescale:
             rescale_module(self, reference=rescale)
 
@@ -1045,18 +1047,22 @@ class STFT_Enhancer(nn.Module):
             x = upsample2(x)
         skips = []
         for encode in self.encoder:
+            #print(x.shape)
             x = encode(x)
             skips.append(x)
-        first = True
+        #print(x.shape)
+        last = x.shape
+        x = x.view(x.shape[0], x.shape[1], -1)
+        x = x.permute(2, 0, 1)
+        x, _ = self.lstm(x)
+        x = x.permute(1, 2, 0)
+        x = x.view(last)
+
         for decode in self.decoder:
-            if ~first:
-                skip = skips.pop(-1)
-                x = x + skip[..., :x.shape[-1]]
-                x = decode(x)
-            else:
-                skips.pop(-1)
-                first = False
-                x = decode(x)
+            skip = skips.pop(-1)
+            #print(x.shape, ' ', skip.shape)
+            x = x + skip[..., :x.shape[-2], :x.shape[-1]]
+            x = decode(x)
         if self.resample == 2:
             x = downsample2(x)
         elif self.resample == 4:

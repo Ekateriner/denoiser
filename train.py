@@ -50,7 +50,7 @@ def run(args):
     elif args.model == 'LUnet_plus':
         model = LU_net_plus(**args.demucs)
     elif args.model == 'stft_denoiser':
-        model = STFT_Enhancer(**args.demucs)
+        model = STFT_Enhancer(**args.stft_model)
 
     if args.show:
         logger.info(model)
