@@ -64,7 +64,7 @@ class Audioset:
             if index >= examples:
                 index -= examples
                 continue
-            num_frames = 0
+            num_frames = -1
             offset = 0
             if self.length is not None:
                 offset = self.stride * index
@@ -74,7 +74,7 @@ class Audioset:
                 if sr != self.sample_rate:
                     raise RuntimeError(f"Expected {file} to have sample rate of "
                                        f"{self.sample_rate}, but got {sr}")
-            if num_frames:
+            if num_frames > 0:
                 out = F.pad(out, (0, num_frames - out.shape[-1]))
             if self.with_path:
                 return out, file

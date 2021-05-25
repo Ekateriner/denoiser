@@ -953,7 +953,8 @@ class STFT_Enhancer(nn.Module):
                  normalize=True,
                  glu=True,
                  rescale=0.1,
-                 floor=1e-3):
+                 floor=1e-3,
+                 lstm=False):
 
         super().__init__()
         if resample not in [1, 2, 4]:
@@ -973,6 +974,7 @@ class STFT_Enhancer(nn.Module):
         self.spec = T.Spectrogram(n_fft=1020, win_length=240, hop_length=120)
         self.grif = T.GriffinLim(n_fft=1020, win_length=240, hop_length=120)
         self.relu = nn.ReLU()
+        self.with_lstm = lstm
 
         self.encoder = nn.ModuleList()
         self.decoder = nn.ModuleList()
@@ -1050,22 +1052,35 @@ class STFT_Enhancer(nn.Module):
         for encode in self.encoder:
             x = encode(x)
             skips.append(x)
-        last = x.shape
-        x = x.view(x.shape[0], x.shape[1], -1)
-        x = x.permute(2, 0, 1)
-        x, _ = self.lstm(x)
-        x = x.permute(1, 2, 0)
-        x = x.view(last)
-        for decode in self.decoder:
-            skip = skips.pop(-1)
-            x = x + skip[..., :x.shape[-2], :x.shape[-1]]
-            x = decode(x)
+        if self.with_lstm:
+            last = x.shape
+            x = x.view(x.shape[0], x.shape[1], -1)
+            x = x.permute(2, 0, 1)
+            x, _ = self.lstm(x)
+            x = x.permute(1, 2, 0)
+            x = x.view(last)
+
+            for decode in self.decoder:
+                skip = skips.pop(-1)
+                x = x + skip[..., :x.shape[-2], :x.shape[-1]]
+                x = decode(x)
+        else:
+            first = True
+            for decode in self.decoder:
+                if ~first:
+                    skip = skips.pop(-1)
+                    x = x + skip[..., :x.shape[-2], :x.shape[-1]]
+                    x = decode(x)
+                else:
+                    skips.pop(-1)
+                    first = False
+                    x = decode(x)
         if self.resample == 2:
             x = downsample2(x)
         elif self.resample == 4:
             x = downsample2(x)
             x = downsample2(x)
-        x = 1e0 + self.relu(x) #x.abs()
+        x = self.relu(x) #x.abs()
         x = x[..., :length]
         #plot_spectrogram(x[0][0].cpu().detach(), title='torchaudio')
         x = self.grif(x)
