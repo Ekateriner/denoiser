@@ -23,7 +23,7 @@ def run(args):
     from denoiser.data import NoisyCleanSet
     from denoiser.demucs import Demucs
     from denoiser.InModel import Demucs_inv, InEnhancer_rep, InEnhancer_selfrep, \
-        InEnhancer_2ch, U_net, U_net_plus, LU_net_plus, STFT_Enhancer
+        InEnhancer_2ch, U_net, U_net_plus, LU_net_plus, STFT_Enhancer, Dilated_denoiser
     from denoiser.solver import Solver
     distrib.init(args)
 
@@ -51,6 +51,8 @@ def run(args):
         model = LU_net_plus(**args.demucs)
     elif args.model == 'stft_denoiser':
         model = STFT_Enhancer(**args.stft_model)
+    elif args.model == 'dilated':
+        model = Dilated_denoiser(**args.demucs)
 
     if args.show:
         logger.info(model)
